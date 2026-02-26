@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic-Tac-Toe — Prodigy Infotech</title>
+  <style>
+/* ── RESET ── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+/* ── CONTAINER ── */
+.container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: #1a1a2e;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.5rem;
+}
+
+/* ── SCOREBOARD ── */
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.score {
+  flex: 1;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 0.8rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+/* Highlight active player score */
+.score.active-x { border-color: #7c5cfc; }
+.score.active-o { border-color: #e05c5c; }
+
+.player-label {
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.player-label.x    { color: #7c5cfc; }
+.player-label.o    { color: #e05c5c; }
+.player-label.draw { color: #888; font-size: 1.1rem; }
+
+.score-val {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #1a1a2e;
+  font-family: 'Courier New', monospace;
+}
+
+.player-name {
+  font-size: 0.72rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── STATUS ── */
+.status {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 1.2rem;
+  min-height: 1.5rem;
+  transition: all 0.2s;
+}
+
+.status .x    { color: #7c5cfc; font-weight: bold; }
+.status .o    { color: #e05c5c; font-weight: bold; }
+.status.winner { font-size: 1.1rem; color: #1a1a2e; font-weight: bold; }
+.status.draw   { color: #888; }
+
+/* ── BOARD ── */
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: #f4f4f8;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  user-select: none;
+  border: 2px solid transparent;
+}
+
+.cell:hover:not(.taken) {
+  background: #ebebf5;
+  transform: scale(1.04);
+}
+
+.cell.x {
+  color: #7c5cfc;
+  cursor: default;
+}
+
+.cell.o {
+  color: #e05c5c;
+  cursor: default;
+}
+
+/* Winning cells highlight */
+.cell.win {
+  background: #eee8ff;
+  border-color: #7c5cfc;
+  transform: scale(1.06);
+}
+
+.cell.win.o {
+  background: #ffeaea;
+  border-color: #e05c5c;
+}
+
+/* Board disabled state */
+.board.disabled .cell:not(.taken) {
+  cursor: default;
+}
+.board.disabled .cell:not(.taken):hover {
+  background: #f4f4f8;
+  transform: none;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.btn {
+  padding: 0.65rem 1.4rem;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: #7c5cfc;
+  color: #fff;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn:hover {
+  background: #9b7ffe;
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #7c5cfc;
+  border: 2px solid #7c5cfc;
+}
+
+.btn-outline:hover {
+  background: #7c5cfc;
+  color: #fff;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 360px) {
+  .cell { font-size: 1.8rem; }
+  .container { padding: 1.5rem 1rem; }
+}
+
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Tic-Tac-Toe</h1>
+
+    <!-- Score board -->
+    <div class="scoreboard">
+      <div class="score" id="scoreX">
+        <span class="player-label x">X</span>
+        <span class="score-val" id="xScore">0</span>
+        <span class="player-name">Player 1</span>
+      </div>
+      <div class="score draws">
+        <span class="player-label draw">—</span>
+        <span class="score-val" id="drawScore">0</span>
+        <span class="player-name">Draws</span>
+      </div>
+      <div class="score" id="scoreO">
+        <span class="player-label o">O</span>
+        <span class="score-val" id="oScore">0</span>
+        <span class="player-name">Player 2</span>
+      </div>
+    </div>
+
+    <!-- Status message -->
+    <div class="status" id="status">Player <span class="x">X</span>'s turn</div>
+
+    <!-- Board -->
+    <div class="board" id="board">
+      <div class="cell" data-index="0"></div>
+      <div class="cell" data-index="1"></div>
+      <div class="cell" data-index="2"></div>
+      <div class="cell" data-index="3"></div>
+      <div class="cell" data-index="4"></div>
+      <div class="cell" data-index="5"></div>
+      <div class="cell" data-index="6"></div>
+      <div class="cell" data-index="7"></div>
+      <div class="cell" data-index="8"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="controls">
+      <button id="restartBtn" class="btn">Restart Game</button>
+      <button id="resetScoreBtn" class="btn btn-outline">Reset Score</button>
+    </div>
+  </div>
+
+  <script>
+// ── Game State ──
+let board        = Array(9).fill(null); // 3x3 board as flat array, null = empty
+let currentPlayer = 'X';               // 'X' always goes first
+let gameOver     = false;
+let scores       = { X: 0, O: 0, draws: 0 };
+
+// ── Winning Combinations ──
+// All possible rows, columns, and diagonals
+const WIN_COMBOS = [
+  [0, 1, 2], // top row
+  [3, 4, 5], // middle row
+  [6, 7, 8], // bottom row
+  [0, 3, 6], // left column
+  [1, 4, 7], // middle column
+  [2, 5, 8], // right column
+  [0, 4, 8], // diagonal top-left to bottom-right
+  [2, 4, 6], // diagonal top-right to bottom-left
+];
+
+// ── DOM Elements ──
+const cells         = document.querySelectorAll('.cell');
+const boardEl       = document.getElementById('board');
+const statusEl      = document.getElementById('status');
+const restartBtn    = document.getElementById('restartBtn');
+const resetScoreBtn = document.getElementById('resetScoreBtn');
+const xScoreEl      = document.getElementById('xScore');
+const oScoreEl      = document.getElementById('oScore');
+const drawScoreEl   = document.getElementById('drawScore');
+const scoreX        = document.getElementById('scoreX');
+const scoreO        = document.getElementById('scoreO');
+
+// ── Cell Click Handler ──
+cells.forEach(function (cell) {
+  cell.addEventListener('click', function () {
+    const index = parseInt(cell.getAttribute('data-index'));
+
+    // Ignore click if cell is taken or game is over
+    if (board[index] !== null || gameOver) return;
+
+    // Place the current player's mark
+    makeMove(index);
+  });
+});
+
+// ── Make Move ──
+function makeMove(index) {
+  board[index] = currentPlayer;
+
+  // Update cell in the DOM
+  const cell = cells[index];
+  cell.textContent = currentPlayer;
+  cell.classList.add(currentPlayer.toLowerCase(), 'taken');
+
+  // Check for win or draw
+  const winCombo = getWinner();
+
+  if (winCombo) {
+    handleWin(winCombo);
+  } else if (isDraw()) {
+    handleDraw();
+  } else {
+    // Switch player and continue
+    switchPlayer();
+  }
+}
+
+// ── Check Winner ──
+// Returns the winning combination array if found, otherwise null.
+function getWinner() {
+  for (let combo of WIN_COMBOS) {
+    const [a, b, c] = combo;
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+      return combo;
+    }
+  }
+  return null;
+}
+
+// ── Check Draw ──
+// Draw when all cells are filled and there is no winner.
+function isDraw() {
+  return board.every(function (cell) { return cell !== null; });
+}
+
+// ── Handle Win ──
+function handleWin(winCombo) {
+  gameOver = true;
+
+  // Highlight winning cells
+  winCombo.forEach(function (index) {
+    cells[index].classList.add('win');
+  });
+
+  // Update status
+  statusEl.textContent = '';
+  statusEl.className = 'status winner';
+  const mark = document.createElement('span');
+  mark.className = currentPlayer.toLowerCase();
+  mark.textContent = currentPlayer;
+  statusEl.appendChild(document.createTextNode('Player '));
+  statusEl.appendChild(mark);
+  statusEl.appendChild(document.createTextNode(' wins! 🎉'));
+
+  // Update score
+  scores[currentPlayer]++;
+  updateScoreDisplay();
+
+  // Disable board
+  boardEl.classList.add('disabled');
+}
+
+// ── Handle Draw ──
+function handleDraw() {
+  gameOver = true;
+  statusEl.textContent = "It's a draw!";
+  statusEl.className = 'status draw';
+  scores.draws++;
+  updateScoreDisplay();
+  boardEl.classList.add('disabled');
+}
+
+// ── Switch Player ──
+function switchPlayer() {
+  currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+  updateStatus();
+  updateActiveScore();
+}
+
+// ── Update Status Text ──
+function updateStatus() {
+  statusEl.className = 'status';
+  statusEl.textContent = '';
+  statusEl.appendChild(document.createTextNode('Player '));
+  const mark = document.createElement('span');
+  mark.className = currentPlayer.toLowerCase();
+  mark.textContent = currentPlayer;
+  statusEl.appendChild(mark);
+  statusEl.appendChild(document.createTextNode("'s turn"));
+}
+
+// ── Highlight Active Player Score ──
+function updateActiveScore() {
+  scoreX.classList.remove('active-x');
+  scoreO.classList.remove('active-o');
+  if (currentPlayer === 'X') {
+    scoreX.classList.add('active-x');
+  } else {
+    scoreO.classList.add('active-o');
+  }
+}
+
+// ── Update Score Display ──
+function updateScoreDisplay() {
+  xScoreEl.textContent    = scores.X;
+  oScoreEl.textContent    = scores.O;
+  drawScoreEl.textContent = scores.draws;
+}
+
+// ── Restart Game ──
+// Resets the board only; keeps scores intact.
+restartBtn.addEventListener('click', function () {
+  board         = Array(9).fill(null);
+  currentPlayer = 'X';
+  gameOver      = false;
+
+  // Clear all cells
+  cells.forEach(function (cell) {
+    cell.textContent = '';
+    cell.className   = 'cell';
+  });
+
+  boardEl.classList.remove('disabled');
+  updateStatus();
+  updateActiveScore();
+});
+
+// ── Reset Score ──
+// Resets scores and restarts the game.
+resetScoreBtn.addEventListener('click', function () {
+  scores = { X: 0, O: 0, draws: 0 };
+  updateScoreDisplay();
+  restartBtn.click(); // reuse restart logic
+});
+
+// ── Init ──
+updateActiveScore();
+
+</script>
+</body>
+</html>
